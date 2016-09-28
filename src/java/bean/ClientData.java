@@ -29,14 +29,6 @@ import javax.crypto.spec.PBEParameterSpec;
 import java.security.KeyFactory;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Iterator;
-import java.util.Properties;
-import java.util.Set;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 
 @Singleton
 public class ClientData implements ClientDataLocal {
@@ -70,10 +62,8 @@ public class ClientData implements ClientDataLocal {
             try {
                 // Get pub key
                 PublicKey pubKey = clients.get(mobile);
-                // Decode cipher
-                cipher = htmlDecode(cipher);
-                // Base64 decode
-                byte[] cipherBytes = Base64.getDecoder().decode(cipher);
+                // Decode from transport
+                byte[] cipherBytes = Utility.decodeFromBase64(cipher);
                 // Decrypt RSA
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
@@ -94,10 +84,9 @@ public class ClientData implements ClientDataLocal {
                         }
                     }
 
-                    // Base 64 encode
-                    numbers = Base64.getEncoder().encodeToString(numbers.getBytes());
-                    // Html encode
-                    numbers = htmlEncode(numbers);
+                    // Encode for transport
+                    numbers = Utility.encodeToBase64(numbers.getBytes());
+                    
                     return numbers;
                 }
 
@@ -129,10 +118,8 @@ public class ClientData implements ClientDataLocal {
             try {
                 // Get pub key
                 PublicKey pubKey = clients.get(mobile);
-                // Decode cipher
-                cipher = htmlDecode(cipher);
-                // Base64 decode
-                byte[] cipherBytes = Base64.getDecoder().decode(cipher);
+                // Decode from transport
+                byte[] cipherBytes = Utility.decodeFromBase64(cipher);
                 // Decrypt RSA
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
@@ -149,10 +136,8 @@ public class ClientData implements ClientDataLocal {
                     // Set cipher to encrypt via client pub key
                     rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
                     byte[] clientBytes = rsaCipher.doFinal(pkaBytes);
-                    // Base64 encode
-                    key = Base64.getEncoder().encodeToString(clientBytes);
-                    // HTML Encode for transport
-                    key = htmlEncode(key);
+                    // Encode for transport
+                    key = Utility.encodeToBase64(clientBytes);
 
                     return key;
                 }
@@ -181,16 +166,11 @@ public class ClientData implements ClientDataLocal {
         System.out.println("Length: " + cipher.length());
 
         try {
-            // HTML decode from transport
-            cipher = cipher.replace("%2B", "+");
-            cipher = cipher.replace("%2F", "/");
-
-            System.out.println("Cipher after url decode: " + cipher);
+            // Decode from transport
+            byte[] decodedBytes = Utility.decodeFromBase64(cipher);
 
             // Get one time key for mobile number
             String oneTimeKey = requests.get(mobile);
-            // Decode cipher from Base64
-            byte[] decodedBytes = Base64.getDecoder().decode(cipher);
 
             // Decrypt bytes using ephemeral key
             char[] password = oneTimeKey.toCharArray();
@@ -234,15 +214,9 @@ public class ClientData implements ClientDataLocal {
                 // Encrypt data with pub key of client (added security)
                 rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
                 byte[] response = rsaCipher.doFinal(baos.toByteArray());
-                // return data
-                String responseBase64 = Base64.getEncoder().encodeToString(response);
-                // HTML Encode for transport
-                responseBase64 = responseBase64.replace("+", "%2B");
-                responseBase64 = responseBase64.replace("/", "%2F");
-
-                return responseBase64;
+                // Encode for transport and return
+                return Utility.encodeToBase64(response);
             }
-
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchPaddingException ex) {
@@ -265,55 +239,15 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public void requestOneTimeKey(String mobile, String email) {
-
+    public void requestOneTimeKey(String mobile) {
+        
         // Generate random one time password
         String password = generateOneTimePassword();
         // Add to requests mapping
-        requests.put(mobile, password);
-        
-        // Gmail credentials
-        final String USERNAME = "pkaserver2016@gmail.com";
-        final String PASSWORD = "pkaserver,1234";
-        
-        // Sender's email ID needs to be mentioned
-        String from = "no-reply@pkaserver.net";
-        // Assuming you are sending email from gmail
-        String host = "smtp.gmail.com";
-        // Get system properties
-        Properties properties = System.getProperties();
-        // Setup mail server
-        properties.put("mail.smtp.starttls.enable", "true");
-        properties.put("mail.smtp.host", host);
-        properties.put("mail.smtp.user", USERNAME);
-        properties.put("mail.smtp.password", PASSWORD);
-        properties.put("mail.smtp.port", "587");
-        properties.put("mail.smtp.auth", "true");
-        // Get the default Session object.
-        Session session = Session.getDefaultInstance(properties);
-
-        try {
-            // Create a default MimeMessage object.
-            MimeMessage message = new MimeMessage(session);
-            // Set From: header field of the header.
-            message.setFrom(new InternetAddress(from));
-            // Set To: header field of the header.
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
-            // Set Subject: header field
-            message.setSubject("PKA Server Connection Request");
-            // Now set the actual message
-            message.setText("Your one time use key: " + password);
-
-            // Send message
-            Transport transport = session.getTransport("smtp");
-            transport.connect(host, from, PASSWORD);
-            transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
-            transport.close();
-            
-            System.out.println("Sent message successfully....");
-        } catch (MessagingException mex) {
-            mex.printStackTrace();
-        }
+        requests.put(mobile, password);        
+        System.out.println("Request to join");
+        System.out.println("Phone Number: " + mobile);
+        System.out.println("Password: " + password);
     }
 
     private void generateKeys() {
@@ -359,16 +293,6 @@ public class ClientData implements ClientDataLocal {
         return key;
     }
 
-    private String htmlDecode(String cipher) {
-        // HTML decode from transport
-        return cipher.replace("%2B", "+").replace("%2F", "/");
-    }
-
-    private String htmlEncode(String cipher) {
-        // HTML encode for transport
-        return cipher.replace("+", "%2B").replace("/", "%2F");
-    }
-
     @Override
     public String getPkaPublicKey() {
 
@@ -377,10 +301,7 @@ public class ClientData implements ClientDataLocal {
             generateKeys();
         }
         // Base 64 encode key
-        String pubkey = Base64.getEncoder().encodeToString(publicKey.getEncoded());
-        // HTML encode for transport
-        pubkey = pubkey.replace("+", "%2B");
-        pubkey = pubkey.replace("/", "%2F");
+        String pubkey = Utility.encodeToBase64(publicKey.getEncoded());
         // Return base64 & HTML encoded pka pub key
         return pubkey;
     }

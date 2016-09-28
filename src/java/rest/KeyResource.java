@@ -14,11 +14,11 @@ public class KeyResource {
     @EJB
     private ClientDataLocal clientBean;
     
-    @Path("request/{mobile}/{email}")
+    @Path("request/{mobile}")
     @POST
     @Produces("text/plain")
-    public void requestOneTimeKey(@PathParam("mobile") String mobile, @PathParam("email") String email) {
-        clientBean.requestOneTimeKey(mobile, email);
+    public void requestOneTimeKey(@PathParam("mobile") String mobile) {
+        clientBean.requestOneTimeKey(mobile);
     }
     
     @Path("join/{mobile}/{base64}")
@@ -28,18 +28,18 @@ public class KeyResource {
         return clientBean.joinServer(mobile, base64);
     }
     
-    @Path("numbers/{mobile}/{cipher}")
+    @Path("numbers/{mobile}/{base64}")
     @POST
     @Produces("text/plain")
-    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("cipher") String cipher) {
-        return "";
+    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
+        return clientBean.getAllNumbers(mobile, base64);
     }
     
-    @Path("publickey/{mobile}/{cipher}")
+    @Path("publickey/{mobile}/{base64}")
     @POST
     @Produces("text/plain")
-    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("cipher") String cipher) {
-        return "";
+    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
+        return clientBean.getPublicKey(mobile, base64);
     }
     
     @Path("pkakey")
