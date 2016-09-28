@@ -12,7 +12,7 @@ public interface ClientDataLocal {
 
     String joinServer(String mobile, String base64);
 
-    void requestOneTimeKey(String mobile, String email);
+    void requestOneTimeKey(String mobile);
 
     String getPkaPublicKey();
 }
