@@ -170,53 +170,72 @@ public class ClientData implements ClientDataLocal {
             byte[] decodedBytes = Utility.decodeFromBase64(cipher);
 
             // Get one time key for mobile number
-            String oneTimeKey = requests.get(mobile);
+//            String oneTimeKey = requests.get(mobile);
+//
+//            // Decrypt bytes using ephemeral key
+//            char[] password = oneTimeKey.toCharArray();
+//            PBEKeySpec pbeKeySpec = new PBEKeySpec(password, salt, 1000);
+//            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+//            SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
+//
+//            PBEParameterSpec pbeParameterSpec = new PBEParameterSpec(salt, 1000);
+//
+//            Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES/CBC/PKCS5Padding");
+//            pbeCipher.init(Cipher.DECRYPT_MODE, secretKey, pbeParameterSpec);
+//            byte[] decryptBytes = pbeCipher.doFinal(decodedBytes);
+//
+//            // Get data from ciphertext
+//            String[] data = new String(decryptBytes).split("---");
+//            String phoneNum = data[0];
+//            byte[] nonceBytes = Base64.getDecoder().decode(data[1].getBytes());
+//            byte[] pubKeyBytes = Base64.getDecoder().decode(data[2].getBytes());
+            
+            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(decodedBytes));
+                
+            if(requests.containsKey(mobile))
+                requests.remove(mobile);
+            clients.put(mobile, pubKey);
+            
+            // Modify nonce
+            int nonceNum = Integer.parseInt(mobile);
+            nonceNum /= 2; // Divide by 2
+            // Encrypt nonce and public key of PKA using public key of client
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            baos.write(String.valueOf(nonceNum).getBytes()); // Modified Nonce
 
-            // Decrypt bytes using ephemeral key
-            char[] password = oneTimeKey.toCharArray();
-            PBEKeySpec pbeKeySpec = new PBEKeySpec(password, salt, 1000);
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
-            SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
-
-            PBEParameterSpec pbeParameterSpec = new PBEParameterSpec(salt, 1000);
-
-            Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES/CBC/PKCS5Padding");
-            pbeCipher.init(Cipher.DECRYPT_MODE, secretKey, pbeParameterSpec);
-            byte[] decryptBytes = pbeCipher.doFinal(decodedBytes);
-
-            // Get data from ciphertext
-            String[] data = new String(decryptBytes).split("---");
-            String phoneNum = data[0];
-            byte[] nonceBytes = Base64.getDecoder().decode(data[1].getBytes());
-            byte[] pubKeyBytes = Base64.getDecoder().decode(data[2].getBytes());
-            PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(pubKeyBytes));
-
-            // Open nonceBytes to get nonce data
+            // Encrypt data with pub key of client (added security)
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
-            byte[] nonce = rsaCipher.doFinal(nonceBytes);
-
-            // Does nonce match?
-            if (new String(nonce).equals(phoneNum)) {
-                // Remove from temp requests
-                requests.remove(phoneNum);
-                // Add to active clients
-                clients.put(phoneNum, pubKey);
-                // Modify nonce
-                int nonceNum = Integer.parseInt(new String(nonce));
-                nonceNum %= 2; // Mod the value
-                // Encrypt nonce and public key of PKA using public key of client
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                baos.write(String.valueOf(nonceNum).getBytes()); // Modified Nonce
-                baos.write("---".getBytes());
-                baos.write(Base64.getEncoder().encode(publicKey.getEncoded())); // PKA pub key
-
-                // Encrypt data with pub key of client (added security)
-                rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
-                byte[] response = rsaCipher.doFinal(baos.toByteArray());
-                // Encode for transport and return
-                return Utility.encodeToBase64(response);
-            }
+            rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
+            byte[] response = rsaCipher.doFinal(baos.toByteArray());
+            // Encode for transport and return
+            return Utility.encodeToBase64(response);
+            
+//            // Open nonceBytes to get nonce data
+//            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+//            rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
+//            byte[] nonce = rsaCipher.doFinal(nonceBytes);
+//
+//            // Does nonce match?
+//            if (new String(nonce).equals(phoneNum)) {
+//                // Remove from temp requests
+//                requests.remove(phoneNum);
+//                // Add to active clients
+//                clients.put(phoneNum, pubKey);
+//                // Modify nonce
+//                int nonceNum = Integer.parseInt(new String(nonce));
+//                nonceNum %= 2; // Mod the value
+//                // Encrypt nonce and public key of PKA using public key of client
+//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//                baos.write(String.valueOf(nonceNum).getBytes()); // Modified Nonce
+//                baos.write("---".getBytes());
+//                baos.write(Base64.getEncoder().encode(publicKey.getEncoded())); // PKA pub key
+//
+//                // Encrypt data with pub key of client (added security)
+//                rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
+//                byte[] response = rsaCipher.doFinal(baos.toByteArray());
+//                // Encode for transport and return
+//                return Utility.encodeToBase64(response);
+//            }
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchPaddingException ex) {
@@ -229,8 +248,6 @@ public class ClientData implements ClientDataLocal {
             Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvalidKeySpecException ex) {
             Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidAlgorithmParameterException ex) {
-            Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -239,7 +256,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public void requestOneTimeKey(String mobile) {
+    public String requestOneTimeKey(String mobile) {
         
         // Generate random one time password
         String password = generateOneTimePassword();
@@ -248,6 +265,7 @@ public class ClientData implements ClientDataLocal {
         System.out.println("Request to join");
         System.out.println("Phone Number: " + mobile);
         System.out.println("Password: " + password);
+        return password;
     }
 
     private void generateKeys() {

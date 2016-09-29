@@ -17,8 +17,8 @@ public class KeyResource {
     @Path("request/{mobile}")
     @POST
     @Produces("text/plain")
-    public void requestOneTimeKey(@PathParam("mobile") String mobile) {
-        clientBean.requestOneTimeKey(mobile);
+    public String requestOneTimeKey(@PathParam("mobile") String mobile) {
+        return clientBean.requestOneTimeKey(mobile);
     }
     
     @Path("join/{mobile}/{base64}")
