@@ -7,8 +7,11 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,6 +24,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.util.Base64;
+import java.util.Set;
 import javax.crypto.spec.PBEParameterSpec;
 
 public class Client {
@@ -42,7 +46,7 @@ public class Client {
     public static void main(String[] args) {
 
         // Received privately from PKA Server
-        String oneTimeKey = "Tangerine6525";
+        String oneTimeKey = "apple123";
 
         // Set up client
         Client client = new Client("0212556332", oneTimeKey);
@@ -62,8 +66,6 @@ public class Client {
         
         System.out.println("Cipher: " + bytesEncoded);
         System.out.println("Length: " + bytesEncoded.length());
-        // POST back to server for approval
-        // DONE MANUALLY ATM USING POSTMAN CHROME EXTENSION
     }
 
     private void generateEphemeral(String password) {
@@ -73,14 +75,14 @@ public class Client {
         try {
             char[] passwordChar = password.toCharArray();
             PBEKeySpec pbeSpec = new PBEKeySpec(passwordChar, salt, 1000);
-            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEwithMD5andDES");
             key = keyFactory.generateSecret(pbeSpec);
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvalidKeySpecException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        
         ephemeralKey = key;
     }
 
