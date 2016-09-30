@@ -94,6 +94,17 @@ public class ClientData implements ClientDataLocal {
     public String getPublicKey(String mobile, String cipher) {
 
         String key = null;
+        
+        // TODO:
+        // Check for clients number in hash map 
+        // Therefore theyre approved and connected
+        
+        // Verify request is being sent from actual client
+        // Compare Cipher text nonce recipients number encrypted in RSA clients private key
+        
+        // If match give key according to mobile number separated from the encrypted package
+        
+        // Else give nothing
 
         if (clients.containsKey(mobile)) {
 
