@@ -56,54 +56,35 @@ public class ClientData implements ClientDataLocal {
     @Override
     public String getAllNumbers(String mobile, String cipher) {
 
-        String numbers = null;
+        String numbers = "";
 
         // Is client active?
         if (clients.containsKey(mobile)) {
-            try {
-                // Get pub key
-                PublicKey pubKey = clients.get(mobile);
-                // Decode from transport
-                byte[] cipherBytes = Utility.decodeFromBase64(cipher);
-                // Decrypt RSA
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
-                byte[] plainBytes = rsaCipher.doFinal(cipherBytes);
-                // Get contents from bytes
-                String nonce = new String(plainBytes); // mobile num of client
-
-                // Is nonce same as client mobile num?
-                if (nonce.equals(mobile)) {
-                    // Get client keys
-                    Iterator<String> clientKeys = clients.keySet().iterator();
-                    // Get client numbers data
-                    while (clientKeys.hasNext()) {
-                        numbers += clientKeys.next();
-
-                        if (clientKeys.hasNext()) {
-                            numbers += ",";
-                        }
-                    }
-
-                    // Encode for transport
-                    numbers = Utility.encodeToBase64(numbers.getBytes());
+            PublicKey pubKey = clients.get(mobile);
+            byte[] cipherBytes = Utility.decodeFromBase64(cipher);
+            byte[] outer = Utility.decryptRSA(privateKey, cipherBytes);
+            //byte[] inner = Utility.decryptRSA(pubKey, cipherBytes);
+            String nonce = new String(outer);
+            if (nonce.equals(mobile)) {
+                // Get client keys
+                Iterator<String> clientKeys = clients.keySet().iterator();
+                // Get client numbers data
+                while (clientKeys.hasNext()) {
+                    numbers += clientKeys.next();
                     
-                    return numbers;
+                    if (clientKeys.hasNext()) {
+                        numbers += ",";
+                    }
                 }
-
-                // Return empty data, nonce was not accepted
-                return numbers;
-            } catch (IllegalBlockSizeException ex) {
-                Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (BadPaddingException ex) {
-                Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (NoSuchAlgorithmException ex) {
-                Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (NoSuchPaddingException ex) {
-                Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (InvalidKeyException ex) {
-                Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
+                
+                // Add RSA encryption here
+                outer = Utility.encryptRSA(pubKey, numbers.getBytes());
+                //outer = Utility.encryptRSA(privateKey, outer);
+                String encoded = Utility.encodeToBase64(outer);
+                
+                return encoded;
             }
+            return numbers;
         }
         // Return empty data, client was not active client
         return numbers;
