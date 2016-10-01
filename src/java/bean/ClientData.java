@@ -92,13 +92,13 @@ public class ClientData implements ClientDataLocal {
 
     @Override
     public String getPublicKey(String mobile, String cipher) {
-
+        
+        System.out.println("Request for " + mobile + " Public key");
         String key = null;
         
         // TODO:
         // Check for clients number in hash map 
         // Therefore theyre approved and connected
-        
         // Verify request is being sent from actual client
         // Compare Cipher text nonce recipients number encrypted in RSA clients private key
         
@@ -134,6 +134,10 @@ public class ClientData implements ClientDataLocal {
 
                     return key;
                 }
+                else
+                {
+                    System.out.println("Contact Key Isnt registered");
+                }
                 // Return nothing, recipient doesnt exist 
                 return key;
             } catch (InvalidKeyException ex) {
@@ -147,6 +151,10 @@ public class ClientData implements ClientDataLocal {
             } catch (BadPaddingException ex) {
                 Logger.getLogger(ClientData.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+        else
+        {
+            System.out.println("Client Key isnt registered");
         }
         // Return nothing, client doesnt exist
         return key;

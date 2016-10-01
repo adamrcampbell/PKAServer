@@ -39,6 +39,7 @@ public class KeyResource {
     @POST
     @Produces("text/plain")
     public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
+        System.out.println("LOL");
         return clientBean.getPublicKey(mobile, base64);
     }
     
