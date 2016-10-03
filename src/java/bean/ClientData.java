@@ -95,16 +95,6 @@ public class ClientData implements ClientDataLocal {
         
         System.out.println("Request for " + mobile + " Public key");
         String key = null;
-        
-        // TODO:
-        // Check for clients number in hash map 
-        // Therefore theyre approved and connected
-        // Verify request is being sent from actual client
-        // Compare Cipher text nonce recipients number encrypted in RSA clients private key
-        
-        // If match give key according to mobile number separated from the encrypted package
-        
-        // Else give nothing
 
         if (clients.containsKey(mobile)) {
 
@@ -118,11 +108,13 @@ public class ClientData implements ClientDataLocal {
                 rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
                 byte[] plainBytes = rsaCipher.doFinal(cipherBytes);
                 // Get contents from bytes
-                String recipientNum = new String(plainBytes); // mobile num of requested client
-
-                if (clients.containsKey(recipientNum)) {
+                String contactMob = new String(plainBytes); // mobile num of requested client
+                
+                System.out.println("Contact Reqested: " + contactMob);
+                
+                if (clients.containsKey(contactMob)) {
                     // Get recipient key
-                    PublicKey recipientKey = clients.get(recipientNum);
+                    PublicKey recipientKey = clients.get(contactMob);
                     // Set cipher to encrypt via pka pri key
                     rsaCipher.init(Cipher.ENCRYPT_MODE, privateKey);
                     byte[] pkaBytes = rsaCipher.doFinal(recipientKey.getEncoded());
@@ -312,4 +304,5 @@ public class ClientData implements ClientDataLocal {
         // Return base64 & HTML encoded pka pub key
         return pubkey;
     }
+    
 }

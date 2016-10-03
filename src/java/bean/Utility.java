@@ -77,13 +77,17 @@ public class Utility {
     public boolean isValid(PublicKey clientPk, String encodedEncryptedMobile, 
             String clientNumber) {
         // decode base 64
+        byte[] decodedBytes = Utility.decodeFromBase64(encodedEncryptedMobile);
         
         // Decrypt for mobile number
-        String decryptedMobileString = "";
+        String decryptedMobileString = new String(encryptRSA(clientPk, 
+                decodedBytes));
         // Compare  mobile numbers
         if (decryptedMobileString.equals(encodedEncryptedMobile)) {
             return true;
         }
         return false;
     }
+    
+    
 }
