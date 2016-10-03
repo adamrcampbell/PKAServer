@@ -54,7 +54,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String getAllNumbers(String mobile, String cipher) {
+    public String getAllNumbers(String mobile, String cipher, String validation) {
 
         String numbers = "";
 
@@ -91,7 +91,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String getPublicKey(String mobile, String cipher) {
+    public String getPublicKey(String mobile, String cipher, String validation) {
         
         System.out.println("Request for " + mobile + " Public key");
         String key = null;
@@ -161,7 +161,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String joinServer(String mobile, String cipher) {
+    public String joinServer(String mobile, String cipher, String validation) {
 
         System.out.println("Receieved Join: " + cipher);
         System.out.println("Length: " + cipher.length());

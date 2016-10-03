@@ -3,6 +3,7 @@ package bean;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -63,5 +64,26 @@ public class Utility {
         }
 
         return decrypted;
+    }
+    
+    /**
+    Validates a User with the encrypted packet containing a mobile number of 
+    the client who sent the request and a mobile string in plain text.
+    @param clientPk
+    @param encodedEncryptedMobile
+    @param clientNumber
+    @return 
+    */
+    public boolean isValid(PublicKey clientPk, String encodedEncryptedMobile, 
+            String clientNumber) {
+        // decode base 64
+        
+        // Decrypt for mobile number
+        String decryptedMobileString = "";
+        // Compare  mobile numbers
+        if (decryptedMobileString.equals(encodedEncryptedMobile)) {
+            return true;
+        }
+        return false;
     }
 }

@@ -21,26 +21,28 @@ public class KeyResource {
         return clientBean.requestOneTimeKey(mobile);
     }
     
-    @Path("join/{mobile}/{base64}")
+    @Path("join/{mobile}/{validation}/{base64}")
     @POST
     @Produces("text/plain")
-    public String joinServer(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
-        return clientBean.joinServer(mobile, base64);
+    public String joinServer(@PathParam("mobile") String mobile, @PathParam("base64") String base64, 
+        @PathParam("validation") String validation) {
+            return clientBean.joinServer(mobile, base64, validation);
     }
     
-    @Path("numbers/{mobile}/{base64}")
+    @Path("numbers/{mobile}/{validation}/{base64}")
     @POST
     @Produces("text/plain")
-    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
-        return clientBean.getAllNumbers(mobile, base64);
+    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("base64") String base64,  
+            @PathParam("validation") String validation) {
+                return clientBean.getAllNumbers(mobile, base64, validation);
     }
     
-    @Path("publickey/{mobile}/{base64}")
+    @Path("publickey/{mobile}/{validation}/{base64}")
     @POST
     @Produces("text/plain")
-    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("base64") String base64) {
-        System.out.println("LOL");
-        return clientBean.getPublicKey(mobile, base64);
+    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("base64") String base64,
+             @PathParam("validation") String validation){
+                return clientBean.getPublicKey(mobile, base64, validation);
     }
     
     @Path("pkakey")
