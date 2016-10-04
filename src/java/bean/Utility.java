@@ -3,6 +3,7 @@ package bean;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -63,5 +64,22 @@ public class Utility {
         }
 
         return decrypted;
+    }
+    
+    public static boolean isValidSender(PublicKey senderPublicKey, String encryptedMobile, 
+            String senderMobile) {
+        
+        boolean isValid = false;
+        
+        // decode base 64
+        byte[] decodedBytes = Utility.decodeFromBase64(encryptedMobile);
+        // Decrypt for mobile number
+        String decryptedMobile = new String(decryptRSA(senderPublicKey, decodedBytes));
+        // Compare  mobile numbers
+        if (decryptedMobile.equals(senderMobile)) {
+            isValid = true;
+        }
+        
+        return isValid;
     }
 }

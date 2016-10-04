@@ -6,11 +6,11 @@ import javax.ejb.Local;
 @Local
 public interface ClientDataLocal {
 
-    String getAllNumbers(String mobile, String cipher);
+    String getAllNumbers(String mobile, String validation);
 
-    String getPublicKey(String mobile, String cipher);
+    String getPublicKey(String mobile, String request, String validation);
 
-    String joinServer(String mobile, String base64);
+    String joinServer(String mobile, String request);
 
     String requestOneTimeKey(String mobile);
 
