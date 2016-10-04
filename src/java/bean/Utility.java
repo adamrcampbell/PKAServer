@@ -66,28 +66,20 @@ public class Utility {
         return decrypted;
     }
     
-    /**
-    Validates a User with the encrypted packet containing a mobile number of 
-    the client who sent the request and a mobile string in plain text.
-    @param clientPk
-    @param encodedEncryptedMobile
-    @param clientNumber
-    @return 
-    */
-    public boolean isValid(PublicKey clientPk, String encodedEncryptedMobile, 
-            String clientNumber) {
-        // decode base 64
-        byte[] decodedBytes = Utility.decodeFromBase64(encodedEncryptedMobile);
+    public static boolean isValidSender(PublicKey senderPublicKey, String encryptedMobile, 
+            String senderMobile) {
         
+        boolean isValid = false;
+        
+        // decode base 64
+        byte[] decodedBytes = Utility.decodeFromBase64(encryptedMobile);
         // Decrypt for mobile number
-        String decryptedMobileString = new String(encryptRSA(clientPk, 
-                decodedBytes));
+        String decryptedMobile = new String(decryptRSA(senderPublicKey, decodedBytes));
         // Compare  mobile numbers
-        if (decryptedMobileString.equals(encodedEncryptedMobile)) {
-            return true;
+        if (decryptedMobile.equals(senderMobile)) {
+            isValid = true;
         }
-        return false;
+        
+        return isValid;
     }
-    
-    
 }
