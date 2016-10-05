@@ -2,8 +2,11 @@ package bean;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -81,5 +84,32 @@ public class Utility {
         }
         
         return isValid;
+    }
+    
+    /**
+     * Function extracting modulus and exponent from a given PublicKey value 
+     * 
+     * @param pub PublicKey value
+     * @return String array containing the modulus in [0] and exponent in [1]
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException 
+     */
+    static public String[] getPubKeyVal(PublicKey pub) throws NoSuchAlgorithmException, InvalidKeySpecException{        
+        byte[] pubBytes = pub.getEncoded();
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        
+        //Recover public key
+        PublicKey rePub = kf.generatePublic(new X509EncodedKeySpec(pubBytes));
+        String pubString = rePub.toString();
+        
+        //Extract modulus value from the public key
+        String[] parts = pubString.split("public");
+        String[] modString = parts[1].split("modulus: ");
+        String pubKeyMod = modString[1].replaceAll("\\s", "");
+        String[] expString = parts[2].split("exponent: ");
+        String pubKeyExp = expString[1].replaceAll("\\s", "");
+        
+        String[] pubKeyModExp = new String[] {pubKeyMod, pubKeyExp};
+        return (pubKeyModExp);
     }
 }
