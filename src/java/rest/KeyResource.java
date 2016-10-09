@@ -25,22 +25,21 @@ public class KeyResource {
     @POST
     @Produces("text/plain")
     public String joinServer(@PathParam("mobile") String mobile, @PathParam("request") String request) {
-            return clientBean.joinServer(mobile, request);
+        return clientBean.joinServer(mobile, request);
     }
     
-    @Path("numbers/{mobile}/{validation}/{request}")
+    @Path("numbers/{mobile}/{request}")
     @POST
     @Produces("text/plain")
-    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("validation") String validation) {
-        return clientBean.getAllNumbers(mobile, validation);
+    public String requestNumbers(@PathParam("mobile") String mobile, @PathParam("request") String request) {
+        return clientBean.getAllNumbers(mobile, request);
     }
     
-    @Path("publickey/{mobile}/{validation}/{request}")
+    @Path("publickey/{mobile}/{request}")
     @POST
     @Produces("text/plain")
-    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("request") String request,
-             @PathParam("validation") String validation){
-                return clientBean.getPublicKey(mobile, request, validation);
+    public String requestPublicKey(@PathParam("mobile") String mobile, @PathParam("request") String request){
+        return clientBean.getPublicKey(mobile, request);
     }
     
     @Path("pkakey")

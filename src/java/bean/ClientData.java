@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 import javax.crypto.SecretKey;
 import javax.ejb.Singleton;
 import client.Client;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,16 +24,13 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Iterator;
 import javax.crypto.KeyGenerator;
-import javax.crypto.spec.IvParameterSpec;
 
 @Singleton
 public class ClientData implements ClientDataLocal {
 
-    // Agreed salt between client and PKA
-    private final byte[] IV = {-84, 40, -10, -53, -80, 90, -57, 125, -84, 40, -10, -53, -80, 90, -57, 125};
     // Client maps
     private Map<String, SecretKey> requests;
-    private Map<String, PublicKey> clients;
+    private Map<String, Contact> clients;
     // PKA Keys
     private PrivateKey privateKey;
     private PublicKey publicKey;
@@ -50,46 +46,53 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String getAllNumbers(String mobile, String validation) {
+    public String getAllNumbers(String mobile, String request) {
 
         String numbers = "";
 
         // Is client active and valid?
-        if (clients.containsKey(mobile) && Utility.isValidSender(clients.get(mobile), validation, mobile)) {
-            // Get client keys
-            Iterator<String> clientKeys = clients.keySet().iterator();
-            // Get client numbers data
-            while (clientKeys.hasNext()) {
-                numbers += clientKeys.next();
+        if (clients.containsKey(mobile)) {
+                
+            // Get pub key
+            PublicKey pubKey = clients.get(mobile).getPublicKey();
+            byte[] data = Utility.doubleDecryptData(request, privateKey, pubKey);
 
-                if (clientKeys.hasNext()) {
-                    numbers += ",";
+            if(mobile.equals(new String(data))) {
+
+                // Get client keys
+                Iterator<String> clientKeys = clients.keySet().iterator();
+                // Get client numbers data
+                while (clientKeys.hasNext()) {
+                    numbers += clientKeys.next();
+
+                    if (clientKeys.hasNext()) {
+                        numbers += ",";
+                    }
                 }
-            }
-            // Get client public key
-            PublicKey pubKey = clients.get(mobile);
-            // Add RSA encryption here
-            byte[] encryptedData = Utility.encryptRSA(pubKey, numbers.getBytes());
-            // Base64 encode for transport
-            String encoded = Utility.encodeToBase64(encryptedData);
+                // Add RSA encryption here
+                String encryptedData = Utility.doubleEncryptData(numbers.getBytes(), pubKey, privateKey);
+                // Base64 encode for transport
+                String encoded = Utility.encodeToBase64(encryptedData.getBytes());
 
-            return encoded;
+                return encoded;
+            }
+            return numbers;
         }
         // Return empty data, client was not active client
         return numbers;
     }
 
     @Override
-    public String getPublicKey(String mobile, String request, String validation) {
+    public String getPublicKey(String mobile, String request) {
 
         System.out.println("Request for " + mobile + " Public key");
         String key = null;
 
-        if (clients.containsKey(mobile) && Utility.isValidSender(clients.get(mobile), validation, mobile)) {
+        if (clients.containsKey(mobile)) {
 
             try {
                 // Get pub key
-                PublicKey pubKey = clients.get(mobile);
+                PublicKey pubKey = clients.get(mobile).getPublicKey();
                 // Decode from transport
                 byte[] cipherBytes = Utility.decodeFromBase64(request);
                 // Decrypt RSA
@@ -103,7 +106,7 @@ public class ClientData implements ClientDataLocal {
 
                 if (clients.containsKey(contactMob)) {
                     // Get recipient key
-                    PublicKey recipientKey = clients.get(contactMob);
+                    PublicKey recipientKey = clients.get(contactMob).getPublicKey();
                     // Set cipher to encrypt via pka pri key
                     rsaCipher.init(Cipher.ENCRYPT_MODE, privateKey);
                     byte[] pkaBytes = rsaCipher.doFinal(recipientKey.getEncoded());
@@ -142,23 +145,18 @@ public class ClientData implements ClientDataLocal {
                 byte[] decodedBytes = Utility.decodeFromBase64(request);
                 // Get one time key for mobile number
                 SecretKey ephemeral = requests.get(mobile);
-
-                Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                IvParameterSpec initVector = new IvParameterSpec(IV);
-                // initialize cipher for decryption
-                aesCipher.init(Cipher.DECRYPT_MODE, ephemeral, initVector);
-                // Decrypt request
-                byte[] decryptBytes = aesCipher.doFinal(decodedBytes);
+                
+                byte[] decryptBytes = Utility.decryptAES(ephemeral, decodedBytes);
 
                 // Get data from ciphertext
                 String[] data = new String(decryptBytes).split("---");
-                String phoneNum = data[0]; // Can remove
+                String phoneNum = data[0];
                 byte[] nonceBytes = Base64.getDecoder().decode(data[1].getBytes());
                 byte[] pubKeyBytes = Base64.getDecoder().decode(data[2].getBytes());
 
                 // Build public ket from supplied data
                 PublicKey clientPubKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(pubKeyBytes));
-
+                
                 // Open nonceBytes to get nonce data
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -169,26 +167,10 @@ public class ClientData implements ClientDataLocal {
                     // Remove from temp requests
                     requests.remove(phoneNum);
                     // Add to active clients
-                    clients.put(phoneNum, clientPubKey);
-                    // Modify nonce
-//                int nonceNum = Integer.parseInt(new String(nonce));
-//                nonceNum /= 2; // Mod the value
-//                // Encrypt nonce and public key of PKA using public key of client
-//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//                baos.write(nonceNum); // Modified Nonce
-//
-//                // Encrypt data with pub key of client (added security)
-//                rsaCipher.init(Cipher.ENCRYPT_MODE, clientPubKey);
-//                byte[] inner = rsaCipher.doFinal(baos.toByteArray());
-//
-//                // Encrypt with private key of pka
-//                rsaCipher.init(Cipher.ENCRYPT_MODE, privateKey);
-//                byte[] outer = rsaCipher.doFinal(inner);
-//                // Encode for transport and return
-//                return Utility.encodeToBase64(outer);
+                    clients.put(phoneNum, new Contact(ephemeral, clientPubKey));
                     return "Success";
                 }
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException | InvalidAlgorithmParameterException ex) {
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException ex) {
                 System.out.println("Join Server Failed: " + ex.getMessage());
             }
         }
