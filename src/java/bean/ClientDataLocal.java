@@ -6,7 +6,7 @@ import javax.ejb.Local;
 @Local
 public interface ClientDataLocal {
 
-    String getAllNumbers(String mobile, String validation);
+    String getAllNumbers(String mobile, String request);
 
     String getPublicKey(String mobile, String request);
 

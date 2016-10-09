@@ -85,46 +85,27 @@ public class ClientData implements ClientDataLocal {
     @Override
     public String getPublicKey(String mobile, String request) {
 
-        System.out.println("Request for " + mobile + " Public key");
         String key = null;
 
         if (clients.containsKey(mobile)) {
 
-            try {
-                // Get pub key
-                PublicKey pubKey = clients.get(mobile).getPublicKey();
-                // Decode from transport
-                byte[] cipherBytes = Utility.decodeFromBase64(request);
-                // Decrypt RSA
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                rsaCipher.init(Cipher.DECRYPT_MODE, pubKey);
-                byte[] plainBytes = rsaCipher.doFinal(cipherBytes);
-                // Get contents from bytes
-                String contactMob = new String(plainBytes); // mobile num of requested client
-
-                System.out.println("Contact Reqested: " + contactMob);
-
-                if (clients.containsKey(contactMob)) {
-                    // Get recipient key
-                    PublicKey recipientKey = clients.get(contactMob).getPublicKey();
-                    // Set cipher to encrypt via pka pri key
-                    rsaCipher.init(Cipher.ENCRYPT_MODE, privateKey);
-                    byte[] pkaBytes = rsaCipher.doFinal(recipientKey.getEncoded());
-                    // Set cipher to encrypt via client pub key
-                    rsaCipher.init(Cipher.ENCRYPT_MODE, pubKey);
-                    byte[] clientBytes = rsaCipher.doFinal(pkaBytes);
-                    // Encode for transport
-                    key = Utility.encodeToBase64(clientBytes);
-
-                    return key;
-                } else {
-                    System.out.println("Contact Key Isnt registered");
-                }
-                // Return nothing, recipient doesnt exist 
+            PublicKey pubKey = clients.get(mobile).getPublicKey();
+            byte[] cipherBytes = Utility.doubleDecryptData(request, privateKey, pubKey);
+            String contactMob = new String(cipherBytes);
+            System.out.println("Contact Reqested: " + contactMob);
+            if (clients.containsKey(contactMob)) {
+                // Get recipient key
+                PublicKey contactKey = clients.get(contactMob).getPublicKey();
+                
+                String encryptedKey = Utility.doubleEncryptData(contactKey.getEncoded(), pubKey, privateKey);
+                // Encode for transport
+                key = Utility.encodeToBase64(encryptedKey.getBytes());
+                
                 return key;
-            } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex) {
-                System.out.println("Get Public Key Failed: " + ex.getMessage());
+            } else {
+                System.out.println("Contact Key Isnt registered");
             }
+            return key;
         } else {
             System.out.println("Client Key isnt registered");
         }
