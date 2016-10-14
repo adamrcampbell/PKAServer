@@ -8,7 +8,7 @@ public interface ClientDataLocal {
 
     String getAllNumbers(String mobile, String validation);
 
-    String getPublicKey(String mobile, String request, String validation);
+    String getPublicKey(String mobile, String request);
 
     String joinServer(String mobile, String request);
 
