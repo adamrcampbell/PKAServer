@@ -168,7 +168,7 @@ public class Utility {
             Key senderKey) {
         
         byte[] decodedData = Utility.decodeFromBase64(data);
-        String[] dataSplit = new String(decodedData).split("\\|\\|\\|");
+            String[] dataSplit = new String(decodedData).split("\\|\\|\\|");
         int actualDataLength = Integer.parseInt(dataSplit[0]);
         int paddedDataLength = Integer.parseInt(dataSplit[1]);
         byte[] decoded = Utility.decodeFromBase64(dataSplit[2]);

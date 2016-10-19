@@ -48,6 +48,8 @@ public class ClientData implements ClientDataLocal {
     @Override
     public String getAllNumbers(String mobile, String request) {
 
+        System.out.println("Request for all numbers from: " + mobile);
+        
         String numbers = "";
 
         // Is client active and valid?
@@ -78,6 +80,9 @@ public class ClientData implements ClientDataLocal {
             }
             return numbers;
         }
+        
+        System.out.println("Sending all numbers to requester: " + mobile);
+        
         // Return empty data, client was not active client
         return numbers;
     }
@@ -230,4 +235,69 @@ public class ClientData implements ClientDataLocal {
         return pubkey;
     }
 
+    @Override
+    public String requestImageKey(String mobile, String request) {
+        
+        String key = null;
+        
+        if(clients.containsKey(mobile)) {
+            
+            Contact client = clients.get(mobile);
+            byte[] decryptedData = Utility.doubleDecryptData(request, privateKey, client.getPublicKey());
+            
+            String message = new String(decryptedData);
+            
+            if(message.equals("key request")) {
+                // Produce and get key
+                SecretKey fileKey = client.requestFileKey();
+                // Encode for transport
+                String encodedKey = Utility.encodeToBase64(fileKey.getEncoded());
+                // Encrypt key
+                String encrypted = Utility.doubleEncryptData(encodedKey.getBytes(), client.getPublicKey(), privateKey);
+                // Encode
+                key = Utility.encodeToBase64(encrypted.getBytes());
+            }
+        }
+        
+        return key;
+    }
+
+    @Override
+    public boolean processUpload(String mobile, String data) {
+        boolean success = false;
+        
+        if(clients.containsKey(mobile)) {
+            Contact client = clients.get(mobile);
+        }
+        
+        return success;
+    }
+
+    @Override
+    public String processDownload(String mobile, String request) {
+       String data = null;
+       
+       if(clients.containsKey(mobile)) {
+           
+       }
+       
+       return data;
+    }
+
+    @Override
+    public String getFileNames(String mobile, String request) {
+        
+        String data = null;
+        
+        if(clients.containsKey(mobile)) {
+            
+            // Get client
+            Contact client = clients.get(mobile);
+            // Process request (decrypt and read)
+            
+            // If valid, get file names and concat as data string, return
+        }
+        
+        return data;
+    }
 }

@@ -21,6 +21,34 @@ public class KeyResource {
         return clientBean.requestOneTimeKey(mobile);
     }
     
+    @Path("filekey/{mobile}/{request}")
+    @POST
+    @Produces("text/plain")
+    public String requestFileKey(@PathParam("mobile") String mobile, @PathParam("request") String request) {
+        return clientBean.requestImageKey(mobile, request);
+    }
+    
+    @Path("upload/{mobile}/{data}")
+    @POST
+    @Produces("text/plain")
+    public boolean uploadFile(@PathParam("mobile") String mobile, @PathParam("data") String data) {
+        return clientBean.processUpload(mobile, data);
+    }
+    
+    @Path("download/{mobile}/{data}")
+    @POST
+    @Produces("text/plain")
+    public String downloadFile(@PathParam("mobile") String mobile, @PathParam("request") String request) {
+        return clientBean.processDownload(mobile, request);
+    }
+    
+    @Path("files/{mobile}/{request}")
+    @POST
+    @Produces("text/plain")
+    public String requestFiles(@PathParam("mobile") String mobile, @PathParam("request") String request) {
+        return clientBean.processDownload(mobile, request);
+    }
+    
     @Path("join/{mobile}/{request}")
     @POST
     @Produces("text/plain")
