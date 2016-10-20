@@ -46,7 +46,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String getAllNumbers(String mobile, String request) {
+    public synchronized String getAllNumbers(String mobile, String request) {
 
         System.out.println("Request for all numbers from: " + mobile);
         
@@ -76,19 +76,19 @@ public class ClientData implements ClientDataLocal {
                 // Base64 encode for transport
                 String encoded = Utility.encodeToBase64(encryptedData.getBytes());
 
+                        
+                System.out.println("Sending all numbers to requester: " + mobile);
                 return encoded;
             }
             return numbers;
         }
-        
-        System.out.println("Sending all numbers to requester: " + mobile);
         
         // Return empty data, client was not active client
         return numbers;
     }
 
     @Override
-    public String getPublicKey(String mobile, String request) {
+    public synchronized String getPublicKey(String mobile, String request) {
 
         String key = null;
 
@@ -97,10 +97,12 @@ public class ClientData implements ClientDataLocal {
             PublicKey pubKey = clients.get(mobile).getPublicKey();
             byte[] cipherBytes = Utility.doubleDecryptData(request, privateKey, pubKey);
             String contactMob = new String(cipherBytes);
-            System.out.println("Contact Reqested: " + contactMob);
+            System.out.println("Contact Requested: " + contactMob);
             if (clients.containsKey(contactMob)) {
                 // Get recipient key
                 PublicKey contactKey = clients.get(contactMob).getPublicKey();
+                
+                System.out.println("Key Size: " + contactKey.getEncoded().length);
                 
                 String encryptedKey = Utility.doubleEncryptData(contactKey.getEncoded(), pubKey, privateKey);
                 // Encode for transport
@@ -119,7 +121,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String joinServer(String mobile, String request) {
+    public synchronized String joinServer(String mobile, String request) {
 
         System.out.println("Request to Join: " + mobile);
         System.out.println("Request: " + request);
@@ -154,7 +156,9 @@ public class ClientData implements ClientDataLocal {
                     requests.remove(phoneNum);
                     // Add to active clients
                     clients.put(phoneNum, new Contact(ephemeral, clientPubKey));
-                    return "Success";
+                    
+                    if(clients.containsKey(phoneNum))
+                        return "Success";
                 }
             } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException ex) {
                 System.out.println("Join Server Failed: " + ex.getMessage());
@@ -165,7 +169,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String requestOneTimeKey(String mobile) {
+    public synchronized String requestOneTimeKey(String mobile) {
 
         // Generate random one time password
         String password = generateOneTimePassword();
@@ -223,7 +227,7 @@ public class ClientData implements ClientDataLocal {
     }
 
     @Override
-    public String getPkaPublicKey() {
+    public synchronized String getPkaPublicKey() {
 
         // Populate keys if not populated
         if (publicKey == null && privateKey == null) {
